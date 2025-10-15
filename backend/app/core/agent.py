@@ -2,13 +2,12 @@ import logging
 from typing import Optional, ClassVar
 
 import instructor
-from instructor import AsyncInstructor
-from openai import AsyncOpenAI
-
 from app.conf.config import OPENAI_API_KEY
 from app.core.history import History
 from app.core.models import IntentionResponse, Intention, CyptoPriceInfoResponse
 from app.core.tools import get_latest_price
+from instructor import AsyncInstructor
+from openai import AsyncOpenAI
 
 logger = logging.getLogger(__name__)
 
@@ -16,7 +15,8 @@ logger = logging.getLogger(__name__)
 class Agent:
     find_intention_guide: ClassVar[str] = "结合历史对话，理解用户这句对话的意图，结构化的输出相应的枚举类型"
     extract_crypto_info_guide: ClassVar[str] = ("结合历史对话，获取用户想要了解的虚拟币的种类，交易所，以及结算价格的币种，返回结构化的输出。"
-                                                "如果不能获得，或者信息不完整，不要假设用户的选择，返回 None")
+                                                "不要假设用户的选择，如果用户的选择不在提供的选项内，或者信息不完整，返回 None，"
+                                                "并在 explanation中给出原因")
 
     def __init__(self):
         self.client: AsyncInstructor = instructor.from_openai(AsyncOpenAI(api_key=OPENAI_API_KEY))
@@ -35,7 +35,7 @@ class Agent:
             if crypto_price_response.crypto_price_info is None:
                 reason = (f"试图从用户的对话中获取虚拟币的种类，交易所以及价格结算的币种，但是没有成功，"
                           f"因为{crypto_price_response.explanation}。参考之前的对话历史纪录，"
-                          f"生成一句向用户继续询问澄清的话，以获得更清楚的信息。")
+                          f"给用户解释，并引导用户提供正确的信息。")
                 answer = await self.generate_response(reason)
             else:
                 try:

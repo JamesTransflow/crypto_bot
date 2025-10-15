@@ -10,7 +10,7 @@ class History:
         self.history: deque[RestMessage] = deque(maxlen=MAX_HISTORY_LEN)
 
     def prompt(self) -> str:
-        output = ["---", "对话历史:"]
+        output = ["生成的回复尽量简短，并且口语化", "---", "对话历史:"]
         if not self.history:
             output.append("目前还没有对话历史")
         else:
